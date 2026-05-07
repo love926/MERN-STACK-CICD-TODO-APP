@@ -5,8 +5,25 @@ const TodoModel = require('./models/Todo');
 
 const app = express();
 
+/*
+|--------------------------------------------------------------------------
+| Middleware
+|--------------------------------------------------------------------------
+*/
+
 app.use(cors());
 app.use(express.json());
+
+/*
+|--------------------------------------------------------------------------
+| Environment Variables
+|--------------------------------------------------------------------------
+*/
+
+const PORT = process.env.PORT || 5000;
+
+const MONGO_URI =
+  process.env.MONGO_URI || 'mongodb://mongodb:27017/TODO';
 
 /*
 |--------------------------------------------------------------------------
@@ -14,23 +31,14 @@ app.use(express.json());
 |--------------------------------------------------------------------------
 */
 
-mongoose.connect("mongodb://mongodb:27017/TODO")
-.then(() => {
-    console.log("MongoDB connected");
-})
-.catch((err) => {
-    console.log("MongoDB connection error:", err);
-});
-
-/*
-|--------------------------------------------------------------------------
-| Server
-|--------------------------------------------------------------------------
-*/
-
-app.listen(5000, () => {
-    console.log("Server listening on port: 5000");
-});
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log('MongoDB connected');
+  })
+  .catch((err) => {
+    console.log('MongoDB connection error:', err);
+  });
 
 /*
 |--------------------------------------------------------------------------
@@ -39,64 +47,89 @@ app.listen(5000, () => {
 */
 
 // Add Todo
-app.post('/add', (req, res) => {
-
+app.post('/add', async (req, res) => {
+  try {
     const { task } = req.body;
 
-    TodoModel.create({ task })
-        .then(result => res.json(result))
-        .catch(err => res.json(err));
-});
+    const result = await TodoModel.create({
+      task,
+    });
 
+    res.json(result);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
 
 // Get Todos
-app.get('/get', (req, res) => {
+app.get('/get', async (req, res) => {
+  try {
+    const result = await TodoModel.find();
 
-    TodoModel.find()
-        .then(result => res.json(result))
-        .catch(err => res.json(err));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
-
 
 // Mark Todo Done
-app.put('/edit/:id', (req, res) => {
-
+app.put('/edit/:id', async (req, res) => {
+  try {
     const { id } = req.params;
 
-    TodoModel.findByIdAndUpdate(
-        id,
-        { done: true },
-        { new: true }
-    )
-    .then(result => res.json(result))
-    .catch(err => res.json(err));
+    const result = await TodoModel.findByIdAndUpdate(
+      id,
+      { done: true },
+      { new: true }
+    );
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
-
-// Update Todo Text
-app.put('/update/:id', (req, res) => {
-
+// Update Todo
+app.put('/update/:id', async (req, res) => {
+  try {
     const { id } = req.params;
     const { task } = req.body;
 
-    TodoModel.findByIdAndUpdate(
-        id,
-        { task: task },
-        { new: true }
-    )
-    .then(result => res.json(result))
-    .catch(err => res.json(err));
+    const result = await TodoModel.findByIdAndUpdate(
+      id,
+      { task: task },
+      { new: true }
+    );
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
-
 // Delete Todo
-app.delete('/delete/:id', (req, res) => {
-
+app.delete('/delete/:id', async (req, res) => {
+  try {
     const { id } = req.params;
 
-    TodoModel.findByIdAndDelete({ _id: id })
-        .then(result => res.json(result))
-        .catch(err => res.json(err));
+    const result = await TodoModel.findByIdAndDelete({
+      _id: id,
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Server
+|--------------------------------------------------------------------------
+*/
+
+app.listen(PORT, () => {
+  console.log(`Server listening on port: ${PORT}`);
 });
 
 module.exports = app;
